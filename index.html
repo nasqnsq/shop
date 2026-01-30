@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>نظام المتجر الاحترافي v4.5</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2563eb; --primary-dark: #1d4ed8;
+            --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
+            --bg: #f1f5f9; --surface: #ffffff; --text: #0f172a; --gray: #64748b;
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        body { margin: 0; font-family: 'Tajawal', sans-serif; background: var(--bg); color: var(--text); padding: 70px 0 85px 0; user-select: none; }
+
+        /* Header */
+        header {
+            position: fixed; top: 0; left: 0; right: 0; background: var(--surface); height: 65px;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); z-index: 1000;
+        }
+        .app-title { font-weight: 800; font-size: 1.2rem; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        .rate-badge { background: #eff6ff; color: var(--primary); padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; border: 1px solid #dbeafe; }
+
+        /* Navigation */
+        nav {
+            position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); height: 75px;
+            display: flex; justify-content: space-around; align-items: center;
+            box-shadow: 0 -4px 6px -1px rgba(0,0,0,0.05); z-index: 1000; border-top: 1px solid #e2e8f0;
+        }
+        nav button { background: none; border: none; flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--gray); font-family: inherit; transition: 0.2s; cursor: pointer; }
+        nav button.active { color: var(--primary); transform: translateY(-2px); }
+        nav button i { font-size: 1.4rem; margin-bottom: 5px; }
+        nav button span { font-size: 0.75rem; font-weight: bold; }
+
+        /* Layout & Components */
+        .container { max-width: 600px; margin: 0 auto; padding: 0 15px; }
+        .page { display: none; animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { background: var(--surface); padding: 16px; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .section-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 15px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+        
+        /* Forms */
+        .form-group { margin-bottom: 12px; }
+        input, select { width: 100%; padding: 14px; border: 1px solid #cbd5e1; border-radius: 12px; font-family: inherit; font-size: 1rem; background: #f8fafc; transition: 0.2s; }
+        input:focus, select:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .row { display: flex; gap: 10px; }
+        
+        /* Buttons */
+        .btn { border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-family: inherit; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; width: 100%; font-size: 0.95rem; }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3); }
+        .btn-success { background: var(--success); color: white; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3); }
+        .btn-danger { background: #fee2e2; color: var(--danger); }
+        .btn-warning { background: #fffbeb; color: var(--warning); border: 1px solid #fcd34d; }
+        .btn-outline { background: transparent; border: 1px solid #cbd5e1; color: var(--gray); }
+        .btn-sm { padding: 8px 16px; width: auto; font-size: 0.85rem; border-radius: 8px; }
+
+        /* List Items */
+        .item-row { display: flex; justify-content: space-between; align-items: center; }
+        .item-info h4 { margin: 0 0 4px 0; font-size: 1rem; }
+        .item-meta { font-size: 0.85rem; color: var(--gray); display: flex; gap: 10px; }
+        .price-tag { color: var(--primary); font-weight: bold; }
+        
+        /* Floating Cart */
+        .cart-bar { position: fixed; bottom: 90px; left: 15px; right: 15px; background: #0f172a; color: white; padding: 16px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); z-index: 990; max-width: 570px; margin: 0 auto; }
+        .cart-total div:first-child { font-size: 1.2rem; font-weight: 800; color: var(--success); }
+        .cart-total div:last-child { font-size: 0.85rem; opacity: 0.7; }
+
+        /* Modals */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal.open { display: flex; }
+        .modal-content { background: white; width: 100%; max-width: 400px; padding: 24px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: scaleIn 0.2s ease; }
+        @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* Utilities */
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; background: #e2e8f0; color: var(--text); }
+        .badge.low { background: #fee2e2; color: var(--danger); }
+        .text-danger { color: var(--danger); }
+        .text-success { color: var(--success); }
+        .text-primary { color: var(--primary); }
+        
+        /* Toggle Switch for Debt Type */
+        .toggle-cont { display: flex; background: #f1f5f9; padding: 4px; border-radius: 12px; margin-bottom: 15px; }
+        .toggle-btn { flex: 1; padding: 8px; text-align: center; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: 0.2s; }
+        .toggle-btn.active { background: white; shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .t-pay.active { color: var(--success); border: 1px solid #bbf7d0; }
+        .t-debt.active { color: var(--danger); border: 1px solid #fecaca; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="app-title"><i class="fas fa-cubes"></i> متجري برو</div>
+    <div class="rate-badge" id="headerRate">1 $ = 0 ₺</div>
+</header>
+
+<main class="container">
+    <div id="page-pos" class="page active">
+        <div class="form-group">
+            <input type="text" id="posSearch" placeholder="🔍 ابحث عن مادة..." oninput="renderPOS()">
+        </div>
+        <div id="posContainer"></div>
+    </div>
+
+    <div id="page-stock" class="page">
+        <div class="card">
+            <div class="section-title"><i class="fas fa-plus-circle"></i> إضافة مادة جديدة</div>
+            <div class="form-group"><input type="text" id="inName" placeholder="اسم المادة"></div>
+            <div class="row form-group">
+                <input type="number" id="inPrice" placeholder="السعر" step="0.01">
+                <select id="inCurr" style="width: 100px;"><option value="USD">$ دولار</option><option value="TRY">₺ تركي</option></select>
+            </div>
+            <div class="row form-group">
+                <input type="number" id="inQty" placeholder="الكمية" step="0.01">
+                <select id="inUnit" style="width: 100px;"><option value="قطعة">قطعة</option><option value="متر">متر</option><option value="كغ">كغ</option></select>
+            </div>
+            <button class="btn btn-primary" onclick="addToInventory()">حفظ المادة</button>
+        </div>
+        <div id="stockContainer"></div>
+    </div>
+
+    <div id="page-debts" class="page">
+        <div class="row" style="margin-bottom: 15px;">
+            <div class="form-group" style="flex:1; margin:0">
+                <input type="text" id="debtSearch" placeholder="🔍 بحث عن عميل..." oninput="renderDebts()">
+            </div>
+            <button class="btn btn-primary" style="width: auto;" onclick="openDebtModal()">
+                <i class="fas fa-edit"></i> تعديل يدوي
+            </button>
+        </div>
+        <div id="debtContainer"></div>
+    </div>
+
+    <div id="page-settings" class="page">
+        <div class="card">
+            <div class="section-title"><i class="fas fa-exchange-alt"></i> سعر الصرف</div>
+            <div class="row" style="align-items: center;">
+                <span style="font-weight:bold">1 دولار = </span>
+                <input type="number" id="settingRate" step="0.1" onchange="updateRate()" style="text-align:center; font-weight:bold; color:var(--primary)">
+                <span style="font-weight:bold">ليرة تركية</span>
+            </div>
+            <small style="color:var(--gray); display:block; margin-top:5px">سيتم تحديث أسعار المواد والديون بناء على هذا السعر.</small>
+        </div>
+
+        <div class="card">
+            <div class="section-title"><i class="fas fa-database"></i> إدارة البيانات</div>
+            <button class="btn btn-primary" onclick="downloadBackup()" style="margin-bottom: 10px;">
+                <i class="fas fa-download"></i> تحميل نسخة احتياطية
+            </button>
+            
+            <input type="file" id="restoreFile" accept=".json" style="display: none;" onchange="restoreBackup(this)">
+            <button class="btn btn-outline" onclick="document.getElementById('restoreFile').click()">
+                <i class="fas fa-upload"></i> استعادة نسخة سابقة
+            </button>
+            <hr style="border:0; border-top:1px solid #e2e8f0; margin:15px 0">
+            <button class="btn btn-danger" onclick="resetSystem()">
+                <i class="fas fa-trash-alt"></i> تصفير النظام بالكامل
+            </button>
+        </div>
+    </div>
+</main>
+
+<div id="cartBar" class="cart-bar" style="display:none">
+    <div class="cart-total">
+        <div id="cartUSD">0.00 $</div>
+        <div id="cartTRY">0 ₺</div>
+    </div>
+    <div style="display:flex; gap:10px">
+        <button class="btn btn-danger btn-sm" onclick="clearCart()"><i class="fas fa-times"></i></button>
+        <button class="btn btn-success" onclick="openPayModal()">إتمام البيع <i class="fas fa-check"></i></button>
+    </div>
+</div>
+
+<div id="qtyModal" class="modal">
+    <div class="modal-content">
+        <h3 id="qtyTitle" style="margin-top:0">تحديد الكمية</h3>
+        <p id="qtyMax" class="text-danger" style="font-size:0.9rem"></p>
+        <div class="form-group">
+            <input type="number" id="qtyInput" placeholder="أدخل الكمية..." step="any" autofocus>
+        </div>
+        <button class="btn btn-primary" onclick="addToCart()">تأكيد الإضافة</button>
+        <button class="btn btn-outline" style="margin-top:10px" onclick="closeModal('qtyModal')">إلغاء</button>
+    </div>
+</div>
+
+<div id="payModal" class="modal">
+    <div class="modal-content">
+        <h3 style="margin-top:0">تفاصيل الفاتورة</h3>
+        <div id="paySummary" style="background:#f8fafc; padding:15px; border-radius:12px; margin-bottom:15px; text-align:center; border:1px dashed #cbd5e1;"></div>
+        
+        <div class="form-group">
+            <label style="font-size:0.9rem; font-weight:bold; margin-bottom:5px; display:block">اسم الزبون (اختياري للدين):</label>
+            <input type="text" id="custName" list="namesList" placeholder="اكتب الاسم...">
+            <datalist id="namesList"></datalist>
+        </div>
+
+        <div class="row form-group">
+            <input type="number" id="paidAmt" placeholder="المدفوع" step="any">
+            <select id="paidCurr" style="width:90px"><option value="USD">$</option><option value="TRY">₺</option></select>
+        </div>
+
+        <div id="debtAlert" style="display:none; margin-bottom:15px; font-size:0.9rem" class="text-danger">
+            <i class="fas fa-exclamation-triangle"></i> المبلغ المتبقي سيسجل ديناً.
+            <select id="debtCurrType" style="margin-top:5px"><option value="USD">سجل الدين بالدولار $</option><option value="TRY">سجل الدين بالتركي ₺</option></select>
+        </div>
+
+        <button class="btn btn-success" onclick="submitSale()">تأكيد وإنهاء</button>
+        <button class="btn btn-outline" style="margin-top:10px" onclick="closeModal('payModal')">رجوع</button>
+    </div>
+</div>
+
+<div id="debtModal" class="modal">
+    <div class="modal-content">
+        <h3 style="margin-top:0"><i class="fas fa-user-edit"></i> تعديل السجل المالي</h3>
+        
+        <div class="toggle-cont">
+            <div id="opt-pay" class="toggle-btn t-pay active" onclick="setDebtMode('pay')">تسديد (قبض)</div>
+            <div id="opt-debt" class="toggle-btn t-debt" onclick="setDebtMode('debt')">إضافة دين</div>
+        </div>
+
+        <div class="form-group">
+            <label style="font-size:0.9rem; font-weight:bold;">اسم العميل:</label>
+            <input type="text" id="manualDebtName" list="namesList" placeholder="اسم العميل...">
+        </div>
+
+        <div class="row form-group">
+            <div style="flex:2">
+                <input type="number" id="manualDebtAmt" placeholder="المبلغ" step="any">
+            </div>
+            <div style="flex:1">
+                <select id="manualDebtCurr"><option value="USD">$ دولار</option><option value="TRY">₺ تركي</option></select>
+            </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="submitManualDebt()">حفظ العملية</button>
+        <button class="btn btn-outline" style="margin-top:10px" onclick="closeModal('debtModal')">إلغاء</button>
+    </div>
+</div>
+
+<nav>
+    <button onclick="nav('pos')" id="n-pos" class="active"><i class="fas fa-cash-register"></i><span>البيع</span></button>
+    <button onclick="nav('stock')" id="n-stock"><i class="fas fa-boxes"></i><span>المخزن</span></button>
+    <button onclick="nav('debts')" id="n-debts"><i class="fas fa-users"></i><span>الديون</span></button>
+    <button onclick="nav('settings')" id="n-settings"><i class="fas fa-cog"></i><span>الإعدادات</span></button>
+</nav>
+
+<script>
+    // --- State Management ---
+    let db = { rate: 30, products: [], debts: [], cart: [] };
+    let activeProdId = null;
+    let debtMode = 'pay'; // 'pay' (تسديد) or 'debt' (دين جديد)
+
+    // --- Initialization ---
+    window.onload = () => {
+        const saved = localStorage.getItem('proStoreV4');
+        if (saved) db = JSON.parse(saved);
+        if(!db.cart) db.cart = [];
+        updateRateDisplay();
+        renderAll();
+    };
+
+    function saveDB() { localStorage.setItem('proStoreV4', JSON.stringify(db)); }
+    function nav(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-' + pageId).classList.add('active');
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.getElementById('n-' + pageId).classList.add('active');
+        renderAll();
+    }
+    function updateRateDisplay() {
+        document.getElementById('headerRate').innerText = `1 $ = ${db.rate} ₺`;
+        document.getElementById('settingRate').value = db.rate;
+    }
+    function updateRate() {
+        const r = parseFloat(document.getElementById('settingRate').value);
+        if(r > 0) { db.rate = r; updateRateDisplay(); saveDB(); renderAll(); }
+    }
+
+    // --- Inventory Functions ---
+    function addToInventory() {
+        const name = document.getElementById('inName').value.trim();
+        const price = parseFloat(document.getElementById('inPrice').value);
+        const qty = parseFloat(document.getElementById('inQty').value);
+        if (!name || isNaN(price) || isNaN(qty)) return alert('بيانات غير مكتملة');
+
+        db.products.push({ id: Date.now(), name, price, curr: document.getElementById('inCurr').value, qty, unit: document.getElementById('inUnit').value });
+        saveDB(); renderStock();
+        document.getElementById('inName').value = ''; document.getElementById('inPrice').value = ''; document.getElementById('inQty').value = '';
+    }
+
+    function renderStock() {
+        const container = document.getElementById('stockContainer');
+        container.innerHTML = '';
+        [...db.products].reverse().forEach(p => {
+            container.innerHTML += `
+            <div class="card item-row">
+                <div class="item-info">
+                    <h4>${p.name}</h4>
+                    <div class="item-meta">
+                        <span>${p.qty} ${p.unit}</span> | <span class="price-tag">${p.price} ${p.curr === 'USD' ? '$' : '₺'}</span>
+                    </div>
+                </div>
+                <button class="btn btn-danger btn-sm" onclick="deleteProd(${p.id})"><i class="fas fa-trash"></i></button>
+            </div>`;
+        });
+    }
+    function deleteProd(id) { if(confirm('حذف؟')) { db.products = db.products.filter(p => p.id !== id); saveDB(); renderAll(); } }
+
+    // --- POS Functions ---
+    function renderPOS() {
+        const search = document.getElementById('posSearch').value.toLowerCase();
+        const container = document.getElementById('posContainer');
+        container.innerHTML = '';
+        db.products.filter(p => p.name.toLowerCase().includes(search)).forEach(p => {
+            const priceDisplay = p.curr === 'USD' ? `${p.price}$` : `${p.price}₺`;
+            container.innerHTML += `
+            <div class="card item-row">
+                <div class="item-info">
+                    <h4>${p.name}</h4>
+                    <div class="item-meta">
+                        <span class="badge ${p.qty <= 5 ? 'low' : ''}">مخزون: ${p.qty}</span>
+                        <span class="price-tag">${priceDisplay}</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="openQtyModal(${p.id})"><i class="fas fa-plus"></i></button>
+            </div>`;
+        });
+        updateCartUI();
+    }
+
+    function openQtyModal(id) {
+        activeProdId = id;
+        const p = db.products.find(x => x.id === id);
+        document.getElementById('qtyTitle').innerText = p.name;
+        document.getElementById('qtyMax').innerText = `المتوفر: ${p.qty} ${p.unit}`;
+        document.getElementById('qtyInput').value = 1;
+        document.getElementById('qtyModal').classList.add('open');
+        setTimeout(()=> document.getElementById('qtyInput').select(), 100);
+    }
+
+    function addToCart() {
+        const qty = parseFloat(document.getElementById('qtyInput').value);
+        const p = db.products.find(x => x.id === activeProdId);
+        if (!qty || qty <= 0 || qty > p.qty) return alert('خطأ في الكمية');
+
+        const existItem = db.cart.find(c => c.id === activeProdId);
+        if (existItem) {
+            if (existItem.qty + qty > p.qty) return alert('الكمية تتجاوز المخزون');
+            existItem.qty += qty;
+        } else { db.cart.push({ ...p, qty: qty }); }
+
+        closeModal('qtyModal'); updateCartUI(); saveDB();
+    }
+
+    function updateCartUI() {
+        let totalUSD = 0;
+        db.cart.forEach(item => { totalUSD += item.curr === 'USD' ? item.price * item.qty : (item.price * item.qty) / db.rate; });
+        document.getElementById('cartUSD').innerText = totalUSD.toFixed(2) + ' $';
+        document.getElementById('cartTRY').innerText = (totalUSD * db.rate).toFixed(0) + ' ₺';
+        document.getElementById('cartBar').style.display = db.cart.length > 0 ? 'flex' : 'none';
+    }
+    function clearCart() { if(confirm('إفراغ السلة؟')) { db.cart = []; saveDB(); updateCartUI(); } }
+
+    // --- Checkout ---
+    function openPayModal() {
+        const totalUSD = parseFloat(document.getElementById('cartUSD').innerText);
+        document.getElementById('paySummary').innerHTML = `<div style="font-size:1.4em;font-weight:bold;color:var(--primary)">${totalUSD.toFixed(2)}$</div><div>${(totalUSD*db.rate).toFixed(0)}₺</div>`;
+        
+        const dl = document.getElementById('namesList'); dl.innerHTML = '';
+        db.debts.forEach(d => dl.innerHTML += `<option value="${d.name}">`);
+        
+        document.getElementById('paidAmt').value = '';
+        document.getElementById('debtAlert').style.display = 'none';
+        document.getElementById('payModal').classList.add('open');
+        
+        document.getElementById('paidAmt').oninput = checkDebtStatus;
+        document.getElementById('paidCurr').onchange = checkDebtStatus;
+    }
+
+    function checkDebtStatus() {
+        const totalUSD = parseFloat(document.getElementById('cartUSD').innerText);
+        const paid = parseFloat(document.getElementById('paidAmt').value) || 0;
+        const paidUSD = document.getElementById('paidCurr').value === 'USD' ? paid : paid / db.rate;
+        document.getElementById('debtAlert').style.display = (totalUSD - paidUSD > 0.05) ? 'block' : 'none';
+    }
+
+    function submitSale() {
+        const custName = document.getElementById('custName').value.trim();
+        const totalUSD = parseFloat(document.getElementById('cartUSD').innerText);
+        const paid = parseFloat(document.getElementById('paidAmt').value) || 0;
+        const paidUSD = document.getElementById('paidCurr').value === 'USD' ? paid : paid / db.rate;
+        const remainderUSD = totalUSD - paidUSD;
+
+        if (remainderUSD > 0.05 && !custName) return alert('مطلوب اسم الزبون لتسجيل الدين');
+
+        db.cart.forEach(c => {
+            const p = db.products.find(x => x.id === c.id);
+            if(p) { p.qty -= c.qty; p.qty = Math.round(p.qty * 100) / 100; }
+        });
+
+        if (remainderUSD > 0.05) {
+            const dCurr = document.getElementById('debtCurrType').value;
+            addDebtRecord(custName, dCurr === 'USD' ? remainderUSD : remainderUSD * db.rate, dCurr);
+        }
+
+        db.cart = []; saveDB(); closeModal('payModal'); renderAll(); alert('تمت العملية');
+    }
+
+    // --- Debts System ---
+    function addDebtRecord(name, amount, curr) {
+        let client = db.debts.find(d => d.name === name);
+        if (!client) { client = { id: Date.now(), name, usd: 0, try: 0 }; db.debts.push(client); }
+        if (curr === 'USD') client.usd += amount; else client.try += amount;
+    }
+
+    function renderDebts() {
+        const search = document.getElementById('debtSearch').value.toLowerCase();
+        const container = document.getElementById('debtContainer');
+        container.innerHTML = '';
+
+        db.debts.filter(d => d.name.toLowerCase().includes(search)).forEach(d => {
+            if (Math.abs(d.usd) < 0.1 && Math.abs(d.try) < 1) return;
+            container.innerHTML += `
+            <div class="card item-row">
+                <div class="item-info">
+                    <h4>${d.name}</h4>
+                    <div style="font-size:0.9rem">
+                        <span class="text-danger" style="margin-left:10px">${d.usd.toFixed(2)} $</span>
+                        <span class="text-primary">${d.try.toFixed(0)} ₺</span>
+                    </div>
+                </div>
+                <button class="btn btn-warning btn-sm" onclick="openDebtModal('${d.name}')">تعديل / دفع</button>
+            </div>`;
+        });
+    }
+
+    // --- New Manual Debt/Pay Logic ---
+    function setDebtMode(mode) {
+        debtMode = mode;
+        const payBtn = document.getElementById('opt-pay');
+        const debtBtn = document.getElementById('opt-debt');
+        
+        if (mode === 'pay') {
+            payBtn.classList.add('active');
+            debtBtn.classList.remove('active');
+        } else {
+            payBtn.classList.remove('active');
+            debtBtn.classList.add('active');
+        }
+    }
+
+    function openDebtModal(preName = '') {
+        document.getElementById('manualDebtName').value = preName;
+        document.getElementById('manualDebtAmt').value = '';
+        
+        // Setup Datalist
+        const dl = document.getElementById('namesList'); dl.innerHTML = '';
+        db.debts.forEach(d => dl.innerHTML += `<option value="${d.name}">`);
+
+        setDebtMode('pay'); // Default to pay
+        document.getElementById('debtModal').classList.add('open');
+    }
+
+    function submitManualDebt() {
+        const name = document.getElementById('manualDebtName').value.trim();
+        const amt = parseFloat(document.getElementById('manualDebtAmt').value);
+        const curr = document.getElementById('manualDebtCurr').value;
+
+        if (!name || !amt || amt <= 0) return alert('البيانات غير صحيحة');
+
+        // If paying, we subtract (negative amount). If adding debt, we add (positive).
+        const finalAmt = (debtMode === 'pay') ? -amt : amt;
+
+        addDebtRecord(name, finalAmt, curr);
+        saveDB();
+        renderDebts();
+        closeModal('debtModal');
+        alert(debtMode === 'pay' ? 'تم تسجيل التسديد' : 'تم إضافة الدين');
+    }
+
+    // --- Backup & Settings ---
+    function downloadBackup() {
+        const a = document.createElement('a');
+        a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+        a.download = `Store_Backup_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+    }
+
+    function restoreBackup(input) {
+        const f = input.files[0]; if(!f) return;
+        const r = new FileReader();
+        r.onload = e => {
+            try { db = JSON.parse(e.target.result); saveDB(); alert('تم الاستعادة'); location.reload(); }
+            catch { alert('ملف تالف'); }
+        };
+        r.readAsText(f);
+    }
+
+    function resetSystem() { if(confirm('حذف الكل؟')) { localStorage.removeItem('proStoreV4'); location.reload(); } }
+    function renderAll() { renderPOS(); renderStock(); renderDebts(); updateCartUI(); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    window.onclick = e => { if (e.target.classList.contains('modal')) e.target.classList.remove('open'); }
+</script>
+
+</body>
+</html>
